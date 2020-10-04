@@ -31,6 +31,8 @@ public:
 	bool is_fw(std::string str_1, std::string str_2);
 	//if it is section return true
 	bool is_section(std::string str);
+	//is last key value string
+	bool is_last_kv(int pos);
 	//return string like json
 	std::string rjson_str(void);
 	//if this string its password return true
