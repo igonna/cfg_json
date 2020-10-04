@@ -190,6 +190,16 @@ bool cjson::is_section(std::string str)
 		}
 	return false;
 }
+bool cjson::is_last_kv(int pos)
+{
+	if (pos >= arr_size)
+		return true;
+	if (is_section(arr[pos + 1]))
+		return true;
+	if (arr[pos + 1][0] == '!' && is_section(arr[pos + 2]))
+		return true;
+	return false;
+}
 std::string cjson::rjson_str(void)
 {
 	std::string js_str;
@@ -198,22 +208,31 @@ std::string cjson::rjson_str(void)
 	bool is_firbrack = true;
 	bool is_prev_section = false;
 	bool was_psw = false;
-
+	std::string tab = "";
 	for (int n_str = 0; n_str < arr_size; ++n_str) {
 		if ((kv_str(arr[n_str], false))[0] == '/')
 			js_str = js_str + '\t' + kv_str(arr[n_str], false) + '\n';
 		else {
+
+			if (arr[n_str] == "timeslot 0") {
+				tab = "\t";
+			}
 			if (is_psw(arr[n_str], &js_str) && !was_psw) {
 				was_psw = true;
 				continue;
 			}
 		if (is_section(arr[n_str])) {
 			if (!is_firbrack) {
-				js_str = js_str + "\t}\n\n";
+				js_str = js_str + tab + "\t}\n\n";
 				is_firbrack = true;
 			}
-			js_str = js_str + "\t" + "\"" + arr[n_str] + "\" : {" + '\n';
+			js_str = js_str + tab + "\t" + "\"" + arr[n_str] + "\" : {" + '\n';
 			is_prev_section = true;
+						
+			if (arr[n_str] == "trx 0") {
+				js_str += "\n\t\t{\n";
+				tab = "\t";
+			}	
 		}
 		else {
 			if (is_prev_section) {
@@ -222,21 +241,24 @@ std::string cjson::rjson_str(void)
 //				js_str = js_str + "{\n";
 			}
 			if (n_str < arr_size - 1) {
-				if (is_section(arr[n_str + 1]))
-					js_str = js_str + "\t\t" + kv_str(arr[n_str], true) + '\n';
+				if (is_last_kv(n_str))
+					js_str = js_str + tab + "\t\t" + kv_str(arr[n_str], true) + '\n';
 				else
-					js_str = js_str + "\t\t" + kv_str(arr[n_str], false) + '\n';
+				if (is_section(arr[n_str + 1]))
+					js_str = js_str + tab + "\t\t" + kv_str(arr[n_str], true) + '\n';
+				else
+					js_str = js_str + tab + "\t\t" + kv_str(arr[n_str], false) + '\n';
 			} else
 				if (n_str == arr_size - 1)
-					js_str = js_str + "\t\t" + kv_str(arr[n_str], true) + "\n\t}\n";
+					js_str = js_str + tab + "\t\t" + kv_str(arr[n_str], true) + "\n\t\t}\n";
 				else
-					js_str = js_str + "\t\t" + kv_str(arr[n_str], false) + '\n';
+					js_str = js_str + tab + "\t\t" + kv_str(arr[n_str], false) + '\n';
 
 
 		}
 		}
 	}
-	js_str += "}\n";
+	js_str += "\t}\n}\n";
 	return js_str;
 }
 
